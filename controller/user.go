@@ -9,9 +9,9 @@ import (
 // usersLoginInfo use map to store user info, and key is username+password for demo
 // user data will be cleared every time the server starts
 // test data: username=zhanglei, password=douyin
-var usersLoginInfo = GerAllUser()
+var usersLoginInfo = dbm.GerAllUser()
 
-var userIdSequence = GetLastId()
+var userIdSequence = dbm.GetLastId()
 
 type UserLoginResponse struct {
 	Response
@@ -37,11 +37,15 @@ func Register(c *gin.Context) {
 	} else {
 		atomic.AddInt64(&userIdSequence, 1)
 		newUser := User{
-			Id:   userIdSequence,
-			Name: username,
+			Id:            userIdSequence,
+			Password:      password,
+			Name:          username,
+			FollowCount:   0,
+			FollowerCount: 0,
+			IsFollow:      false,
 		}
-		usersLoginInfo[token] = newUser
-		AddUser(newUser.Id, username, password)
+		//usersLoginInfo[token] = newUser
+		dbm.AddUser(newUser)
 		c.JSON(http.StatusOK, UserLoginResponse{
 			Response: Response{StatusCode: 0},
 			UserId:   userIdSequence,
@@ -55,6 +59,8 @@ func Login(c *gin.Context) {
 	password := c.Query("password")
 
 	token := username + password
+
+	usersLoginInfo = dbm.GerAllUser()
 
 	if user, exist := usersLoginInfo[token]; exist {
 		c.JSON(http.StatusOK, UserLoginResponse{
@@ -71,6 +77,7 @@ func Login(c *gin.Context) {
 
 func UserInfo(c *gin.Context) {
 	token := c.Query("token")
+	usersLoginInfo = dbm.GerAllUser()
 
 	if user, exist := usersLoginInfo[token]; exist {
 		c.JSON(http.StatusOK, UserResponse{

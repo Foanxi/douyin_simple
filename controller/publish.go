@@ -3,7 +3,9 @@ package controller
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"log"
 	"net/http"
+	"os"
 	"path/filepath"
 )
 
@@ -56,4 +58,49 @@ func PublishList(c *gin.Context) {
 		},
 		VideoList: DemoVideos,
 	})
+}
+
+func Action(c *gin.Context) {
+	token := c.PostForm("token")
+	fmt.Println(token)
+	//获取用户上传的视频名称
+	title := c.PostForm("title")
+
+	filepath1 := "./video/" + token + "/"
+	_, err := os.Stat(filepath1)
+	if err != nil {
+		//创建用户token名称的文件夹
+		if os.IsNotExist(err) {
+			err := os.Mkdir(filepath1, os.ModePerm)
+			if err != nil {
+				return
+			}
+		}
+	}
+	//r.ParseMultipartForm(32 << 20)
+	//获取上传的文件
+	file, err := c.FormFile("data")
+	//打印日志
+	//log.Println(title)
+	if err != nil {
+		c.String(http.StatusBadRequest, "A BAD REQUEST")
+		return
+	}
+	//保存文件到本地中
+	titleSum := filepath1 + "/" + title + ".mp4"
+	////保存截图到本地
+	//imagePath := filepath1 + "/" + title + ".jpg"
+	////获取视频封面图
+	//cmd := exec.Command("ffmpeg", "-i", imagePath, "-s", "4cif")
+	//buf := new(bytes.Buffer)
+	//cmd.Stdout =
+	//log.Println(buf)
+	//c.SaveUploadedFile(, imagePath)
+	c.SaveUploadedFile(file, titleSum)
+	c.String(http.StatusOK, fmt.Sprintf("%s,upload", file.Filename))
+	//获取作者编号
+	m := dbm.GerAllUser()
+	authorId := m[token].Id
+	insertVideo := dbm.InsertVideo(authorId, titleSum, "C:/Users/30703/Pictures/桌面壁纸/heihei.jpg")
+	log.Println(insertVideo)
 }

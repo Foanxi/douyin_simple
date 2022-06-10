@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/RaymondCode/simple-demo/controller"
 	_ "github.com/go-sql-driver/mysql"
+	"os"
 )
 
 func main() {
@@ -14,4 +15,5 @@ func main() {
 	//	}
 	//}
 	print(controller.GetLastId())
+	print(os.Stat("./name"))
 }
