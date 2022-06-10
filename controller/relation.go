@@ -13,7 +13,6 @@ type UserListResponse struct {
 // RelationAction no practical effect, just check if token is valid
 func RelationAction(c *gin.Context) {
 	token := c.Query("token")
-
 	if _, exist := usersLoginInfo[token]; exist {
 		c.JSON(http.StatusOK, Response{StatusCode: 0})
 	} else {
