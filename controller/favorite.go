@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"strconv"
 )
 
 // FavoriteAction no practical effect, just check if token is valid
@@ -30,37 +31,23 @@ func FavoriteAction(c *gin.Context) {
 
 // FavoriteList all users have same favorite video list
 func FavoriteList(c *gin.Context) {
-	//用户喜欢的视频
-	var FavouriteVideos = []Video{}
-	//获取用户的id编号
+
+	//获取用户的token检测是否合法
 	token := c.Query("token")
-	m := dbm.GerAllUser()
-	userId := m[token].Id
-	videosList := dbm.FavouriteByUserId(userId)
-	for _, video := range videosList {
-		FavouriteVideos = append(FavouriteVideos, video)
+	if _, exist := usersLoginInfo[token]; !exist {
+		c.JSON(http.StatusOK, Response{StatusCode: 1, StatusMsg: "请先登录后再操作"})
 	}
-	if FavouriteVideos == nil {
-		fmt.Println("用户没有喜欢的视频")
-		c.JSON(http.StatusOK, VideoListResponse{
-			Response: Response{
-				StatusCode: 0,
-			},
-			VideoList: nil,
-		})
-	} else {
-		fmt.Println("用户有喜欢的视频")
-		c.JSON(http.StatusOK, VideoListResponse{
-			Response: Response{
-				StatusCode: 0,
-			},
-			VideoList: FavouriteVideos,
-		})
-	}
+
+	//调用FavouriteByUserId查出该用户喜爱的视频列表
+	userid := c.Query("user_id")
+	user_id, _ := strconv.ParseInt(userid, 10, 8)
+	videosList := dbm.FavouriteByUserId(user_id)
+
 	c.JSON(http.StatusOK, VideoListResponse{
 		Response: Response{
 			StatusCode: 0,
 		},
-		VideoList: DemoVideos,
+		VideoList: videosList,
 	})
+
 }

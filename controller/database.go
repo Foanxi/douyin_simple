@@ -121,22 +121,45 @@ func (mgr *manager) InsertVideo(authorId int64, playUrl string, coverUrl string,
 func (mgr *manager) FavouriteByUserId(id int64) []Video {
 	db, _ := sql.Open("mysql", "root:19635588@tcp(127.0.0.1:3306)/douyin?charset=utf8")
 	defer db.Close()
-	//找到该用户所喜欢的视频
-	rows, _ := db.Query("select author_id, play_url, play_url, cover_url from video v1,user_video v2 where id = ? and v2.video_id = v1.id", id)
-	m := make([]Video, 20)
-	//获取视频的信息
-	for rows.Next() {
-		var u Video
-		count := dbm.GetFavouriteCount(u.Id)
-		err := rows.Scan(u.Id, u.Author.Id, u.PlayUrl, u.CoverUrl, 1)
-		u.FavoriteCount = count
 
+	//找到该用户所喜欢的视频
+	rows, _ := db.Query("select id, author_id, play_url, cover_url, favourite_count, comment_count from video v1,user_video v2 where v2.user_id=? and v1.id = v2.video_id and v2.favourite=1", id)
+	m := make([]Video, 30)
+
+	//获取视频的信息
+	numcount := 0
+	for rows.Next() {
+		//数据库使用的临时存放结果集数据的对象
+		var u VideoDB
+		err := rows.Scan(&u.Id, &u.AuthorId, &u.PlayUrl, &u.CoverUrl, &u.FavoriteCount, &u.CommentCount)
+
+		//真正的Video对象
+		var video Video
+
+		//调用SearchUser方法获取到User对象
+		author := dbm.SearchUser(u.AuthorId)
+
+		/**
+		TODO
+		在这里需要通过token去获取到该用户是否有对该视频点赞
+		*/
+
+		//为video对象赋值
+		video.Id = u.Id
+		video.Author = author
+		video.CommentCount = u.CommentCount
+		video.FavoriteCount = u.FavoriteCount
+		video.PlayUrl = "http://10.34.151.198:8080/static" + u.PlayUrl
+		video.CoverUrl = "http://10.34.151.198:8080/static" + u.CoverUrl
+		video.IsFavorite = false
 		if err != nil {
 			fmt.Println("err = ", err)
 			break
 		}
-		videos := append(m, u)
-		m = videos
+
+		//为第numcount个视频赋值
+		m[numcount] = video
+		numcount++
 	}
 	return m
 }
