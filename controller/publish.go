@@ -3,9 +3,10 @@ package controller
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"log"
+	"github.com/golang-module/carbon/v2"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 )
 
@@ -52,6 +53,7 @@ func Publish(c *gin.Context) {
 
 // PublishList all users have same publish video list
 func PublishList(c *gin.Context) {
+
 	c.JSON(http.StatusOK, VideoListResponse{
 		Response: Response{
 			StatusCode: 0,
@@ -62,11 +64,12 @@ func PublishList(c *gin.Context) {
 
 func Action(c *gin.Context) {
 	token := c.PostForm("token")
-	fmt.Println(token)
+
 	//获取用户上传的视频名称
 	title := c.PostForm("title")
 
-	filepath1 := "./video/" + token + "/"
+	//视频路径
+	filepath1 := "./Data/video/" + token + "/"
 	_, err := os.Stat(filepath1)
 	if err != nil {
 		//创建用户token名称的文件夹
@@ -77,30 +80,62 @@ func Action(c *gin.Context) {
 			}
 		}
 	}
+
 	//r.ParseMultipartForm(32 << 20)
 	//获取上传的文件
 	file, err := c.FormFile("data")
-	//打印日志
-	//log.Println(title)
+
 	if err != nil {
 		c.String(http.StatusBadRequest, "A BAD REQUEST")
 		return
 	}
+
+	//最后的具体的视频路径
+	titleSum := filepath1 + title + ".mp4"
 	//保存文件到本地中
-	titleSum := filepath1 + "/" + title + ".mp4"
-	////保存截图到本地
-	//imagePath := filepath1 + "/" + title + ".jpg"
-	////获取视频封面图
-	//cmd := exec.Command("ffmpeg", "-i", imagePath, "-s", "4cif")
-	//buf := new(bytes.Buffer)
-	//cmd.Stdout =
-	//log.Println(buf)
-	//c.SaveUploadedFile(, imagePath)
-	c.SaveUploadedFile(file, titleSum)
-	c.String(http.StatusOK, fmt.Sprintf("%s,upload", file.Filename))
+	err = c.SaveUploadedFile(file, titleSum)
+	if err != nil {
+		fmt.Print("保存视频失败")
+	}
+
+	//设置照片的保存路径
+	photoSum := "./Data/photo/" + token + "/"
+	_, exist := os.Stat(photoSum)
+	if exist != nil {
+		//创建用户token名称的文件夹
+		if os.IsNotExist(exist) {
+			err := os.Mkdir(photoSum, os.ModePerm)
+			if err != nil {
+				return
+			}
+		}
+	}
+
+	photoSum = photoSum + title + ".bmp"
+
+	//调用ffmpeg截图视频并将截图保存至
+	cmd := exec.Command("ffmpeg", "-i", titleSum, "-y", "-f", "image2", "-ss", "00:00:02", "-vframes", "1", photoSum)
+	err = cmd.Run()
+	if err != nil {
+		fmt.Print(err)
+		fmt.Print("失败")
+	}
+
+	//c.String(http.StatusOK, fmt.Sprintf("%s,upload", file.Filename))
 	//获取作者编号
 	m := dbm.GerAllUser()
 	authorId := m[token].Id
-	insertVideo := dbm.InsertVideo(authorId, titleSum, "C:/Users/30703/Pictures/桌面壁纸/heihei.jpg")
-	log.Println(insertVideo)
+	lastTime := c.PostForm("latest_time")
+	if lastTime == "" {
+		lastTime = carbon.Now().ToDateTimeString()
+	}
+
+	titleSum = titleSum[1:]
+	photoSum = photoSum[1:]
+	_ = dbm.InsertVideo(authorId, titleSum, photoSum, lastTime)
+
+	c.JSON(http.StatusOK, Response{
+		StatusCode: 0,
+		StatusMsg:  title + " uploaded successfully",
+	})
 }

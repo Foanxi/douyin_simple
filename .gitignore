@@ -22,3 +22,5 @@ go.work
 
 .idea
 /public/2_新建视频录制1.mp4
+*.mp4
+*.bmp

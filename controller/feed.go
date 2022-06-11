@@ -14,9 +14,10 @@ type FeedResponse struct {
 
 // Feed same demo video list for every request
 func Feed(c *gin.Context) {
+	videoList := dbm.GetVideoList()
 	c.JSON(http.StatusOK, FeedResponse{
 		Response:  Response{StatusCode: 0},
-		VideoList: DemoVideos,
+		VideoList: videoList,
 		NextTime:  time.Now().Unix(),
 	})
 }
