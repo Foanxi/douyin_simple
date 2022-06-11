@@ -22,6 +22,8 @@ type DataBaseManager interface {
 	FavouriteByUserId(id int64) []Video
 	GetVideoList() []Video
 	UpdateUserFavorite(userId int64, videoId string, favourite string)
+	// UserFavoriteUser  用户关注
+	UserFavoriteUser(userId string, favouriteUserId string, action_type string) bool
 }
 
 type manager struct {
@@ -263,4 +265,37 @@ func (mgr *manager) UpdateUserFavorite(userId int64, videoId string, favourite s
 		}
 	}
 
+}
+
+func (mgr *manager) UserFavoriteUser(userId string, favouriteUserId string, action_type string) bool {
+	//TODO implement me
+	db, _ := sql.Open("mysql", "root:19635588@tcp(127.0.0.1:3306)/douyin?charset=utf8")
+	defer db.Close()
+	favouriteType, _ := strconv.ParseInt(action_type, 10, 8)
+	id := usersLoginInfo[userId].Id
+	row := db.QueryRow("select * from user where Id = ?", id)
+	var result User
+	err := row.Scan(&result.Id, &result.Password, &result.Name, &result.FollowerCount, &result.FollowerCount, &result.IsFollow)
+	if err != nil {
+		if strconv.FormatInt(id, 10) != favouriteUserId {
+			//关注
+			if favouriteType == 1 {
+				_, err := db.Exec("insert into author_fans(authod_id,favourite_id) values(?,?)", id, favouriteUserId)
+				if err != nil {
+					fmt.Println(err)
+					return false
+				}
+				return true
+			} else {
+				// 取消关注
+				_, err := db.Exec("delete from author_fans where authod_id = ? and  favourite_id = ? ", id, favouriteUserId)
+				if err != nil {
+					fmt.Println(err)
+					return false
+				}
+				return true
+			}
+		}
+	}
+	return false
 }
