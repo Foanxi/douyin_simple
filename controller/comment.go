@@ -33,9 +33,26 @@ func CommentAction(c *gin.Context) {
 			commentText := c.Query("comment_text")
 			//首先先把评论添加进数据库中
 			comment = Dbm.AddComment(user.Id, videoIdInt, commentText)
+			c.JSON(http.StatusOK, CommentActionResponse{Response: _type.Response{StatusCode: 0},
+				Comment: comment})
+		} else if actionType == "2" {
+			//删除评论
+			//获取该评论的id
+			commentId := c.Query("comment_id")
+			commentIdInt, err := strconv.ParseInt(commentId, 10, 20)
+			if err != nil {
+				fmt.Println("在转换评论id时出错，err = ", err)
+			}
+			//进行删除操作
+			isDelete := Dbm.DeleteCommentById(commentIdInt, videoIdInt)
+			fmt.Println("是否成功删除该评论：", isDelete)
+			//返回全部列表
+			CommentList := Dbm.GetAllComment(videoIdInt)
+			c.JSON(http.StatusOK, CommentListResponse{
+				Response:    _type.Response{StatusCode: 0},
+				CommentList: CommentList,
+			})
 		}
-		c.JSON(http.StatusOK, CommentActionResponse{Response: _type.Response{StatusCode: 0},
-			Comment: comment})
 	} else {
 		c.JSON(http.StatusOK, _type.Response{StatusCode: 1, StatusMsg: "User doesn't exist"})
 	}

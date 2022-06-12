@@ -30,6 +30,7 @@ type Manager interface {
 	AddComment(useId int64, videoId int64, commentText string) _type.Comment
 	GetUserRelation(authorId int64, favouriteId int64) bool
 	GetAuthorById(userId string) []_type.User
+	DeleteCommentById(commentIdInt int64, videoIdInt int64) bool
 }
 
 type manager struct {
@@ -404,11 +405,13 @@ func (mgr *manager) GetAllComment(videoId int64) []_type.Comment {
 		fmt.Println("在拿取视频评论用户信息时出错")
 	}
 	//将用户信息存储在一个map中
-	userList := make(map[int64]_type.User, 20)
+	userList := make(map[int64]_type.User)
+	//var userNum int64
 	for resultUser.Next() {
 		var user _type.User
 		resultUser.Scan(&user.Id, &user.Name, &user.Password, &user.FollowCount, &user.FollowerCount)
 		userList[user.Id] = user
+		//userNum++
 	}
 	var commentNum int64
 	for resultComment.Next() {
@@ -446,4 +449,19 @@ func (mgr *manager) GetAuthorById(userId string) []_type.User {
 	}
 	authorList = authorList[:numCount]
 	return authorList
+}
+func (mgr *manager) DeleteCommentById(commentIdInt int64, videoIdInt int64) bool {
+	//已删除评论
+	_, err := db.Exec("delete from comment where comment_id = ?", commentIdInt)
+	if err != nil {
+		fmt.Println("删除评论时出错，err = ", err)
+		return false
+	}
+	//将视频的评论数减一
+	_, err = db.Exec("update video set comment_count = comment_count-1 where id = ?", videoIdInt)
+	if err != nil {
+		fmt.Println("将视频的评论数减一时出错，err = ", err)
+		return false
+	}
+	return true
 }
