@@ -21,7 +21,13 @@ type CommentActionResponse struct {
 
 // CommentAction no practical effect, just check if token is valid
 func CommentAction(c *gin.Context) {
+
 	token := c.Query("token")
+	//获取用户的id，用于鉴别是否有权限看评论
+	if token == "" {
+		c.JSON(http.StatusOK, _type.Response{StatusCode: 1, StatusMsg: "User doesn't exist"})
+		return
+	}
 	videoId := c.Query("video_id")
 	videoIdInt, err := strconv.ParseInt(videoId, 10, 8)
 	if err != nil {
@@ -61,12 +67,6 @@ func CommentAction(c *gin.Context) {
 
 // CommentList all videos have same demo comment list
 func CommentList(c *gin.Context) {
-	//获取用户的id，用于鉴别是否有权限看评论
-	token := c.Query("token")
-	if token == "" {
-		c.JSON(http.StatusOK, _type.Response{StatusCode: 1, StatusMsg: "User doesn't exist"})
-		return
-	}
 	videoIdStr := c.Query("video_id")
 	videoId, err := strconv.ParseInt(videoIdStr, 10, 20)
 	if err != nil {
