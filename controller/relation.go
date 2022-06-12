@@ -27,11 +27,15 @@ func RelationAction(c *gin.Context) {
 
 // FollowList all users have same followed list
 func FollowList(c *gin.Context) {
+	var userList []_type.User
+	//获取use_id
+	useId := c.Query("user_id")
+	userList = Dbm.GetAuthorById(useId)
 	c.JSON(http.StatusOK, UserListResponse{
 		Response: _type.Response{
 			StatusCode: 0,
 		},
-		UserList: []_type.User{DemoUser},
+		UserList: userList,
 	})
 }
 

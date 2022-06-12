@@ -4,6 +4,7 @@ import (
 	"github.com/RaymondCode/simple-demo/type"
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"strconv"
 	"sync/atomic"
 )
 
@@ -75,16 +76,15 @@ func Login(c *gin.Context) {
 
 func UserInfo(c *gin.Context) {
 	token := c.Query("token")
+	authorId := c.Query("user_id")
 	UsersLoginInfo = Dbm.GerAllUser()
+	user := UsersLoginInfo[token]
+	id, _ := strconv.ParseInt(authorId, 10, 8)
+	user.IsFollow = Dbm.GetUserRelation(id, user.Id)
 
-	if user, exist := UsersLoginInfo[token]; exist {
-		c.JSON(http.StatusOK, UserResponse{
-			Response: _type.Response{StatusCode: 0},
-			User:     user,
-		})
-	} else {
-		c.JSON(http.StatusOK, UserResponse{
-			Response: _type.Response{StatusCode: 1, StatusMsg: "User doesn't exist"},
-		})
-	}
+	c.JSON(http.StatusOK, UserResponse{
+		Response: _type.Response{StatusCode: 0},
+		User:     user,
+	})
+
 }
