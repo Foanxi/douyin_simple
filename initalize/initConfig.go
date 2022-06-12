@@ -3,6 +3,7 @@ package initalize
 import (
 	"fmt"
 	"github.com/RaymondCode/simple-demo/global"
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/spf13/viper"
 )
 

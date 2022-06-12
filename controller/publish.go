@@ -2,6 +2,7 @@ package controller
 
 import (
 	"fmt"
+	"github.com/RaymondCode/simple-demo/Dao"
 	"github.com/RaymondCode/simple-demo/type"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-module/carbon/v2"
@@ -18,7 +19,7 @@ type VideoListResponse struct {
 // PublishList all users have same publish video list
 func PublishList(c *gin.Context) {
 	userId := c.Query("user_id")
-	videolist := Dbm.GetUserPublish(userId)
+	videolist := Dao.Vdi.GetUserPublish(userId)
 	c.JSON(http.StatusOK, VideoListResponse{
 		Response: _type.Response{
 			StatusCode: 0,
@@ -87,7 +88,7 @@ func Action(c *gin.Context) {
 
 	//c.String(http.StatusOK, fmt.Sprintf("%s,upload", file.Filename))
 	//获取作者编号
-	m := Dbm.GerAllUser()
+	m := Dao.Udi.GerAllUser()
 	authorId := m[token].Id
 	lastTime := c.PostForm("latest_time")
 	if lastTime == "" {
@@ -96,7 +97,7 @@ func Action(c *gin.Context) {
 
 	titleSum = titleSum[1:]
 	photoSum = photoSum[1:]
-	_ = Dbm.InsertVideo(authorId, titleSum, photoSum, lastTime)
+	_ = Dao.Vdi.InsertVideo(authorId, titleSum, photoSum, lastTime)
 
 	c.JSON(http.StatusOK, _type.Response{
 		StatusCode: 0,

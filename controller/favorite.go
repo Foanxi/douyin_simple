@@ -2,6 +2,7 @@ package controller
 
 import (
 	"fmt"
+	"github.com/RaymondCode/simple-demo/Dao"
 	"github.com/RaymondCode/simple-demo/type"
 	"github.com/gin-gonic/gin"
 	"net/http"
@@ -11,7 +12,7 @@ import (
 func FavoriteAction(c *gin.Context) {
 	token := c.Query("token")
 
-	userId := UsersLoginInfo[token].Id
+	userId := Dao.Udi.GerAllUser()[token].Id
 
 	//用户的点赞,1代表点赞,2代表取消点赞
 	actionType := c.Query("action_type")
@@ -20,9 +21,9 @@ func FavoriteAction(c *gin.Context) {
 	fmt.Println(videoId)
 
 	//如果点赞不为1，说明需要取消点赞
-	Dbm.UpdateUserFavorite(userId, videoId, actionType)
+	Dao.Fdi.UpdateUserFavorite(userId, videoId, actionType)
 
-	if _, exist := UsersLoginInfo[token]; exist {
+	if _, exist := Dao.Udi.GerAllUser()[token]; exist {
 		c.JSON(http.StatusOK, _type.Response{StatusCode: 0})
 	} else {
 		c.JSON(http.StatusOK, _type.Response{StatusCode: 1, StatusMsg: "User doesn't exist"})
@@ -36,8 +37,8 @@ func FavoriteList(c *gin.Context) {
 	token := c.Query("token")
 
 	//调用FavouriteByUserId查出该用户喜爱的视频列表
-	userId, _ := UsersLoginInfo[token]
-	videosList := Dbm.FavouriteByUserId(userId.Id)
+	userId, _ := Dao.Udi.GerAllUser()[token]
+	videosList := Dao.Vdi.FavouriteByUserId(userId.Id)
 
 	c.JSON(http.StatusOK, VideoListResponse{
 		Response: _type.Response{

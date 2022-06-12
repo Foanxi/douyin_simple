@@ -1,17 +1,13 @@
 package controller
 
 import (
+	"github.com/RaymondCode/simple-demo/Dao"
 	"github.com/RaymondCode/simple-demo/type"
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"strconv"
 	"sync/atomic"
 )
-
-// UsersLoginInfo use map to store user info, and key is username+password for demo
-var UsersLoginInfo = Dbm.GerAllUser()
-
-var userIdSequence = Dbm.GetLastId()
 
 type UserLoginResponse struct {
 	_type.Response
@@ -30,11 +26,12 @@ func Register(c *gin.Context) {
 
 	token := username + password
 
-	if _, exist := UsersLoginInfo[token]; exist {
+	if _, exist := Dao.Udi.GerAllUser()[token]; exist {
 		c.JSON(http.StatusOK, UserLoginResponse{
 			Response: _type.Response{StatusCode: 1, StatusMsg: "User already exist"},
 		})
 	} else {
+		var userIdSequence = Dao.Udi.GetLastId()
 		atomic.AddInt64(&userIdSequence, 1)
 		newUser := _type.User{
 			Id:            userIdSequence,
@@ -44,10 +41,10 @@ func Register(c *gin.Context) {
 			FollowerCount: 0,
 			IsFollow:      false,
 		}
-		Dbm.AddUser(newUser)
+		Dao.Udi.AddUser(newUser)
 		c.JSON(http.StatusOK, UserLoginResponse{
 			Response: _type.Response{StatusCode: 0},
-			UserId:   userIdSequence,
+			UserId:   Dao.Udi.GetLastId(),
 			Token:    username + password,
 		})
 	}
@@ -56,12 +53,8 @@ func Register(c *gin.Context) {
 func Login(c *gin.Context) {
 	username := c.Query("username")
 	password := c.Query("password")
-
 	token := username + password
-
-	UsersLoginInfo = Dbm.GerAllUser()
-
-	if user, exist := UsersLoginInfo[token]; exist {
+	if user, exist := Dao.Udi.GerAllUser()[token]; exist {
 		c.JSON(http.StatusOK, UserLoginResponse{
 			Response: _type.Response{StatusCode: 0},
 			UserId:   user.Id,
@@ -77,14 +70,12 @@ func Login(c *gin.Context) {
 func UserInfo(c *gin.Context) {
 	token := c.Query("token")
 	authorId := c.Query("user_id")
-	UsersLoginInfo = Dbm.GerAllUser()
-	user := UsersLoginInfo[token]
+	user := Dao.Udi.GerAllUser()[token]
 	id, _ := strconv.ParseInt(authorId, 10, 8)
-	user.IsFollow = Dbm.GetUserRelation(id, user.Id)
+	user.IsFollow = Dao.Udi.GetUserRelation(id, user.Id)
 
 	c.JSON(http.StatusOK, UserResponse{
 		Response: _type.Response{StatusCode: 0},
 		User:     user,
 	})
-
 }

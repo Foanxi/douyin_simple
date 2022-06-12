@@ -2,6 +2,7 @@ package controller
 
 import (
 	"fmt"
+	"github.com/RaymondCode/simple-demo/Dao"
 	_type "github.com/RaymondCode/simple-demo/type"
 	"github.com/gin-gonic/gin"
 	"net/http"
@@ -26,13 +27,13 @@ func CommentAction(c *gin.Context) {
 	if err != nil {
 	}
 	actionType := c.Query("action_type")
-	if user, exist := UsersLoginInfo[token]; exist {
+	if user, exist := Dao.Udi.GerAllUser()[token]; exist {
 		//等于1时说明用户要发布评论
 		var comment _type.Comment
 		if actionType == "1" {
 			commentText := c.Query("comment_text")
 			//首先先把评论添加进数据库中
-			comment = Dbm.AddComment(user.Id, videoIdInt, commentText)
+			comment = Dao.Cdi.AddComment(user.Id, videoIdInt, commentText)
 			c.JSON(http.StatusOK, CommentActionResponse{Response: _type.Response{StatusCode: 0},
 				Comment: comment})
 		} else if actionType == "2" {
@@ -44,10 +45,10 @@ func CommentAction(c *gin.Context) {
 				fmt.Println("在转换评论id时出错，err = ", err)
 			}
 			//进行删除操作
-			isDelete := Dbm.DeleteCommentById(commentIdInt, videoIdInt)
+			isDelete := Dao.Cdi.DeleteCommentById(commentIdInt, videoIdInt)
 			fmt.Println("是否成功删除该评论：", isDelete)
 			//返回全部列表
-			CommentList := Dbm.GetAllComment(videoIdInt)
+			CommentList := Dao.Cdi.GetAllComment(videoIdInt)
 			c.JSON(http.StatusOK, CommentListResponse{
 				Response:    _type.Response{StatusCode: 0},
 				CommentList: CommentList,
@@ -72,7 +73,7 @@ func CommentList(c *gin.Context) {
 		fmt.Println("在videoId转换时出错,err = ", err)
 	}
 	//用户有权限则可以进入到评论列表查看该视频的所有评论,查询所有评论
-	CommentList := Dbm.GetAllComment(videoId)
+	CommentList := Dao.Cdi.GetAllComment(videoId)
 	c.JSON(http.StatusOK, CommentListResponse{
 		Response:    _type.Response{StatusCode: 0},
 		CommentList: CommentList,
