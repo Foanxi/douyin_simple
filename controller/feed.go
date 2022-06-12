@@ -15,7 +15,8 @@ type FeedResponse struct {
 
 // Feed same demo video list for every request
 func Feed(c *gin.Context) {
-	videoList := Dbm.GetVideoList()
+	token := c.Query("token")
+	videoList := Dbm.GetVideoList(token)
 	c.JSON(http.StatusOK, FeedResponse{
 		Response:  _type.Response{StatusCode: 0},
 		VideoList: videoList,

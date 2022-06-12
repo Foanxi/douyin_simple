@@ -17,12 +17,13 @@ type VideoListResponse struct {
 
 // PublishList all users have same publish video list
 func PublishList(c *gin.Context) {
-
+	userId := c.Query("user_id")
+	videolist := Dbm.GetUserPublish(userId)
 	c.JSON(http.StatusOK, VideoListResponse{
 		Response: _type.Response{
 			StatusCode: 0,
 		},
-		VideoList: DemoVideos,
+		VideoList: videolist,
 	})
 }
 
@@ -45,7 +46,6 @@ func Action(c *gin.Context) {
 		}
 	}
 
-	//r.ParseMultipartForm(32 << 20)
 	//获取上传的文件
 	file, err := c.FormFile("data")
 

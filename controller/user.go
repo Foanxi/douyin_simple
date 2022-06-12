@@ -43,7 +43,6 @@ func Register(c *gin.Context) {
 			FollowerCount: 0,
 			IsFollow:      false,
 		}
-		//usersLoginInfo[token] = newUser
 		Dbm.AddUser(newUser)
 		c.JSON(http.StatusOK, UserLoginResponse{
 			Response: _type.Response{StatusCode: 0},

@@ -1,9 +1,11 @@
 package controller
 
 import (
-	"github.com/RaymondCode/simple-demo/type"
+	"fmt"
+	_type "github.com/RaymondCode/simple-demo/type"
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"strconv"
 )
 
 type CommentListResponse struct {
@@ -19,21 +21,21 @@ type CommentActionResponse struct {
 // CommentAction no practical effect, just check if token is valid
 func CommentAction(c *gin.Context) {
 	token := c.Query("token")
+	videoId := c.Query("video_id")
+	videoIdInt, err := strconv.ParseInt(videoId, 10, 8)
+	if err != nil {
+	}
 	actionType := c.Query("action_type")
-
 	if user, exist := UsersLoginInfo[token]; exist {
+		//等于1时说明用户要发布评论
+		var comment _type.Comment
 		if actionType == "1" {
-			text := c.Query("comment_text")
-			c.JSON(http.StatusOK, CommentActionResponse{Response: _type.Response{StatusCode: 0},
-				Comment: _type.Comment{
-					Id:         1,
-					User:       user,
-					Content:    text,
-					CreateDate: "05-01",
-				}})
-			return
+			commentText := c.Query("comment_text")
+			//首先先把评论添加进数据库中
+			comment = Dbm.AddComment(user.Id, videoIdInt, commentText)
 		}
-		c.JSON(http.StatusOK, _type.Response{StatusCode: 0})
+		c.JSON(http.StatusOK, CommentActionResponse{Response: _type.Response{StatusCode: 0},
+			Comment: comment})
 	} else {
 		c.JSON(http.StatusOK, _type.Response{StatusCode: 1, StatusMsg: "User doesn't exist"})
 	}
@@ -41,8 +43,21 @@ func CommentAction(c *gin.Context) {
 
 // CommentList all videos have same demo comment list
 func CommentList(c *gin.Context) {
+	//获取用户的id，用于鉴别是否有权限看评论
+	token := c.Query("token")
+	if token == "" {
+		c.JSON(http.StatusOK, _type.Response{StatusCode: 1, StatusMsg: "User doesn't exist"})
+		return
+	}
+	videoIdStr := c.Query("video_id")
+	videoId, err := strconv.ParseInt(videoIdStr, 10, 20)
+	if err != nil {
+		fmt.Println("在videoId转换时出错,err = ", err)
+	}
+	//用户有权限则可以进入到评论列表查看该视频的所有评论,查询所有评论
+	CommentList := Dbm.GetAllComment(videoId)
 	c.JSON(http.StatusOK, CommentListResponse{
 		Response:    _type.Response{StatusCode: 0},
-		CommentList: DemoComments,
+		CommentList: CommentList,
 	})
 }

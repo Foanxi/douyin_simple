@@ -5,7 +5,6 @@ import (
 	"github.com/RaymondCode/simple-demo/type"
 	"github.com/gin-gonic/gin"
 	"net/http"
-	"strconv"
 )
 
 // FavoriteAction no practical effect, just check if token is valid
@@ -17,11 +16,11 @@ func FavoriteAction(c *gin.Context) {
 	//用户的点赞,1代表点赞,2代表取消点赞
 	actionType := c.Query("action_type")
 	//获取视频的id
-	viedoId := c.Query("video_id")
-	fmt.Println(viedoId)
+	videoId := c.Query("video_id")
+	fmt.Println(videoId)
 
 	//如果点赞不为1，说明需要取消点赞
-	Dbm.UpdateUserFavorite(userId, viedoId, actionType)
+	Dbm.UpdateUserFavorite(userId, videoId, actionType)
 
 	if _, exist := UsersLoginInfo[token]; exist {
 		c.JSON(http.StatusOK, _type.Response{StatusCode: 0})
@@ -35,14 +34,10 @@ func FavoriteList(c *gin.Context) {
 
 	//获取用户的token检测是否合法
 	token := c.Query("token")
-	if _, exist := UsersLoginInfo[token]; !exist {
-		c.JSON(http.StatusOK, _type.Response{StatusCode: 1, StatusMsg: "请先登录后再操作"})
-	}
 
 	//调用FavouriteByUserId查出该用户喜爱的视频列表
-	userid := c.Query("user_id")
-	userId, _ := strconv.ParseInt(userid, 10, 8)
-	videosList := Dbm.FavouriteByUserId(userId)
+	userId, _ := UsersLoginInfo[token]
+	videosList := Dbm.FavouriteByUserId(userId.Id)
 
 	c.JSON(http.StatusOK, VideoListResponse{
 		Response: _type.Response{
