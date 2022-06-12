@@ -1,13 +1,14 @@
 package controller
 
 import (
+	"github.com/RaymondCode/simple-demo/type"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )
 
 type UserListResponse struct {
-	Response
-	UserList []User `json:"user_list"`
+	_type.Response
+	UserList []_type.User `json:"user_list"`
 }
 
 // RelationAction no practical effect, just check if token is valid
@@ -15,31 +16,31 @@ func RelationAction(c *gin.Context) {
 	//token := c.Query("token")
 	token := c.Query("token")
 	favouriteUserId := c.Query("to_user_id")
-	action_type := c.Query("action_type")
-	statue := dbm.UserFavoriteUser(token, favouriteUserId, action_type)
+	actionType := c.Query("action_type")
+	statue := Dbm.UserFavoriteUser(token, favouriteUserId, actionType)
 	if statue == true {
-		c.JSON(http.StatusOK, Response{StatusCode: 0})
+		c.JSON(http.StatusOK, _type.Response{StatusCode: 0})
 	} else {
-		c.JSON(http.StatusOK, Response{StatusCode: 1, StatusMsg: "Can't focus on yourself"})
+		c.JSON(http.StatusOK, _type.Response{StatusCode: 1, StatusMsg: "Can't focus on yourself"})
 	}
 }
 
-// FollowList all users have same follow list
+// FollowList all users have same followed list
 func FollowList(c *gin.Context) {
 	c.JSON(http.StatusOK, UserListResponse{
-		Response: Response{
+		Response: _type.Response{
 			StatusCode: 0,
 		},
-		UserList: []User{DemoUser},
+		UserList: []_type.User{DemoUser},
 	})
 }
 
 // FollowerList all users have same follower list
 func FollowerList(c *gin.Context) {
 	c.JSON(http.StatusOK, UserListResponse{
-		Response: Response{
+		Response: _type.Response{
 			StatusCode: 0,
 		},
-		UserList: []User{DemoUser},
+		UserList: []_type.User{DemoUser},
 	})
 }

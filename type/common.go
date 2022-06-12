@@ -1,4 +1,4 @@
-package controller
+package _type
 
 type Response struct {
 	StatusCode int32  `json:"status_code"`
@@ -42,8 +42,7 @@ type User struct {
 }
 
 type Favourite struct {
-	user_id   int64
-	video_id  int64
-	favourite int8
-	comment   string
+	UserId    int64
+	VideoId   int64
+	Favourite int8
 }

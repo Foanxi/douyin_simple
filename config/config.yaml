@@ -1,0 +1,7 @@
+mysql:
+  username: root
+  password: 19635588
+  url: tcp(localhost:3306)/douyin?charset=utf8&parseTime=True&loc=Local
+
+ipconfig:
+  ip_Url: http://10.34.151.198:8080/

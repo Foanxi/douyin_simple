@@ -1,6 +1,8 @@
 package controller
 
-var DemoVideos = []Video{
+import "github.com/RaymondCode/simple-demo/type"
+
+var DemoVideos = []_type.Video{
 	{
 		Id:            1,
 		Author:        DemoUser,
@@ -12,7 +14,7 @@ var DemoVideos = []Video{
 	},
 }
 
-var DemoComments = []Comment{
+var DemoComments = []_type.Comment{
 	{
 		Id:         1,
 		User:       DemoUser,
@@ -21,7 +23,7 @@ var DemoComments = []Comment{
 	},
 }
 
-var DemoUser = User{
+var DemoUser = _type.User{
 	Id:            1,
 	Name:          "TestUser",
 	FollowCount:   0,

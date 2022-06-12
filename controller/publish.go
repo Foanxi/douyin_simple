@@ -2,60 +2,24 @@ package controller
 
 import (
 	"fmt"
+	"github.com/RaymondCode/simple-demo/type"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-module/carbon/v2"
 	"net/http"
 	"os"
 	"os/exec"
-	"path/filepath"
 )
 
 type VideoListResponse struct {
-	Response
-	VideoList []Video `json:"video_list"`
-}
-
-// Publish check token then save upload file to public directory
-func Publish(c *gin.Context) {
-	token := c.PostForm("token")
-
-	if _, exist := usersLoginInfo[token]; !exist {
-		c.JSON(http.StatusOK, Response{StatusCode: 1, StatusMsg: "User doesn't exist"})
-		return
-	}
-
-	data, err := c.FormFile("data")
-	if err != nil {
-		c.JSON(http.StatusOK, Response{
-			StatusCode: 1,
-			StatusMsg:  err.Error(),
-		})
-		return
-	}
-
-	filename := filepath.Base(data.Filename)
-	user := usersLoginInfo[token]
-	finalName := fmt.Sprintf("%d_%s", user.Id, filename)
-	saveFile := filepath.Join("./public/", finalName)
-	if err := c.SaveUploadedFile(data, saveFile); err != nil {
-		c.JSON(http.StatusOK, Response{
-			StatusCode: 1,
-			StatusMsg:  err.Error(),
-		})
-		return
-	}
-
-	c.JSON(http.StatusOK, Response{
-		StatusCode: 0,
-		StatusMsg:  finalName + " uploaded successfully",
-	})
+	_type.Response
+	VideoList []_type.Video `json:"video_list"`
 }
 
 // PublishList all users have same publish video list
 func PublishList(c *gin.Context) {
 
 	c.JSON(http.StatusOK, VideoListResponse{
-		Response: Response{
+		Response: _type.Response{
 			StatusCode: 0,
 		},
 		VideoList: DemoVideos,
@@ -123,7 +87,7 @@ func Action(c *gin.Context) {
 
 	//c.String(http.StatusOK, fmt.Sprintf("%s,upload", file.Filename))
 	//获取作者编号
-	m := dbm.GerAllUser()
+	m := Dbm.GerAllUser()
 	authorId := m[token].Id
 	lastTime := c.PostForm("latest_time")
 	if lastTime == "" {
@@ -132,9 +96,9 @@ func Action(c *gin.Context) {
 
 	titleSum = titleSum[1:]
 	photoSum = photoSum[1:]
-	_ = dbm.InsertVideo(authorId, titleSum, photoSum, lastTime)
+	_ = Dbm.InsertVideo(authorId, titleSum, photoSum, lastTime)
 
-	c.JSON(http.StatusOK, Response{
+	c.JSON(http.StatusOK, _type.Response{
 		StatusCode: 0,
 		StatusMsg:  title + " uploaded successfully",
 	})
