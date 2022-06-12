@@ -31,6 +31,9 @@ type Manager interface {
 	GetUserRelation(authorId int64, favouriteId int64) bool
 	GetAuthorById(userId string) []_type.User
 	DeleteCommentById(commentIdInt int64, videoIdInt int64) bool
+	//	粉丝列表
+	GetFanList(userId string) []_type.User
+	GetVideoFavouriteRelation(userId int64, videoId int64) bool
 }
 
 type manager struct {
@@ -45,13 +48,13 @@ func InitDB() {
 }
 
 func (mgr *manager) SearchUser(userid int64) _type.User {
-	row := db.QueryRow("select * from user where id=?", &userid)
+	row := db.QueryRow("select id, name, followcount, followercount from user where id=?", &userid)
 	if row == nil {
 		fmt.Print("查询失败")
 		return _type.User{}
 	}
 	var u _type.User
-	err := row.Scan(&u.Id, &u.Name, &u.Password, &u.FollowCount, &u.FollowerCount)
+	err := row.Scan(&u.Id, &u.Name, &u.FollowCount, &u.FollowerCount)
 	if err != nil {
 		fmt.Print("添加至结构体失败")
 	}
@@ -79,8 +82,12 @@ func (mgr *manager) GerAllUser() map[string]_type.User {
 	if db == nil {
 		InitDB()
 	}
+	//创建一个map存放User对象，并通过token作为键获取对应的User对象
 	m := make(map[string]_type.User)
+
 	rows, _ := db.Query("select id, name, password, followcount, followercount from user")
+	defer rows.Close()
+
 	var u _type.User
 	for rows.Next() {
 		err := rows.Scan(&u.Id, &u.Name, &u.Password, &u.FollowCount, &u.FollowerCount)
@@ -94,6 +101,7 @@ func (mgr *manager) GerAllUser() map[string]_type.User {
 	return m
 }
 
+// GetLastVideoId 获取最后一个视频的Id，保证Id的唯一性
 func (mgr *manager) GetLastVideoId() int64 {
 	var id int64
 	err := db.QueryRow("select id from video order by id desc limit 1").Scan(&id)
@@ -108,7 +116,7 @@ func (mgr *manager) GetLastVideoId() int64 {
 
 // InsertVideo 插入新的视频信息
 func (mgr *manager) InsertVideo(authorId int64, playUrl string, coverUrl string, time string) bool {
-	var id = Dbm.GetLastVideoId()
+	id := Dbm.GetLastVideoId()
 	atomic.AddInt64(&id, 1)
 	_, err := db.Exec("INSERT INTO video(id,author_id,play_url,cover_url,favourite_count,comment_count,create_time) value (?,?,?,?,?,?,?)", &id, &authorId, &playUrl, &coverUrl, 0, 0, time)
 	if err != nil {
@@ -125,23 +133,23 @@ func (mgr *manager) FavouriteByUserId(id int64) []_type.Video {
 		count = 30
 	}
 
+	//查询对应id的用户所喜爱的视频
 	rows, _ := db.Query("select id, author_id, play_url, cover_url, favourite_count, comment_count from video v1,favouriter_video v2 where v2.user_id=? and v1.id = v2.video_id and v2.favourite=1", id)
 	m := make([]_type.Video, count)
 	defer rows.Close()
+
 	//获取视频的信息
 	numCount := 0
 	for rows.Next() {
 		//数据库使用的临时存放结果集数据的对象
 		var u _type.VideoDB
-		err := rows.Scan(&u.Id, &u.AuthorId, &u.PlayUrl, &u.CoverUrl, &u.FavoriteCount, &u.CommentCount)
+		_ = rows.Scan(&u.Id, &u.AuthorId, &u.PlayUrl, &u.CoverUrl, &u.FavoriteCount, &u.CommentCount)
 
 		//真正的Video对象
 		var video _type.Video
 
 		//调用SearchUser方法获取到User对象
 		author := Dbm.GetUserById(u.AuthorId)
-
-		row, _ := db.Query("select * from favouriter_video where user_id = ? and video_id =? and favourite = 1", id, u.Id)
 
 		author.IsFollow = Dbm.GetUserRelation(u.AuthorId, id)
 
@@ -152,17 +160,22 @@ func (mgr *manager) FavouriteByUserId(id int64) []_type.Video {
 		video.FavoriteCount = u.FavoriteCount
 		video.PlayUrl = global.Conf.Ipconfig.Ip_url + "static" + u.PlayUrl
 		video.CoverUrl = global.Conf.Ipconfig.Ip_url + "static" + u.CoverUrl
-		video.IsFavorite = row.Next()
-		if err != nil {
-			fmt.Println("err = ", err)
-			break
-		}
+		video.IsFavorite = Dbm.GetVideoFavouriteRelation(id, u.Id)
 
 		//为第numCount个视频赋值
 		m[numCount] = video
 		numCount++
 	}
 	return m
+}
+
+func (mgr *manager) GetVideoFavouriteRelation(userId int64, videoId int64) bool {
+	rows, err := db.Query("select * from favouriter_video where user_id = ? and video_id =? and favourite = 1", userId, videoId)
+	defer rows.Close()
+	if err != nil {
+		return false
+	}
+	return rows.Next()
 }
 
 func (mgr *manager) GetVideoList(token string) []_type.Video {
@@ -179,6 +192,8 @@ func (mgr *manager) GetVideoList(token string) []_type.Video {
 	}
 	m := make([]_type.Video, count)
 	numCount := 0
+
+	user := UsersLoginInfo[token]
 	//获取视频的信息
 	for videoList.Next() {
 		//数据库使用的临时存放结果集数据的对象
@@ -191,10 +206,7 @@ func (mgr *manager) GetVideoList(token string) []_type.Video {
 		//调用SearchUser方法获取到User对象
 		author := Dbm.GetUserById(u.AuthorId)
 
-		user := UsersLoginInfo[token]
-		var resultCount int64
-		db.QueryRow("select * from favouriter_video where user_id = ? and video_id =? and favourite = 1", user.Id, u.Id).Scan(&resultCount)
-
+		//调用GetUserRelation获取到当前用户是否有关注视频作者
 		author.IsFollow = Dbm.GetUserRelation(author.Id, user.Id)
 
 		//为video对象赋值
@@ -204,7 +216,7 @@ func (mgr *manager) GetVideoList(token string) []_type.Video {
 		video.FavoriteCount = u.FavoriteCount
 		video.PlayUrl = global.Conf.Ipconfig.Ip_url + "static" + u.PlayUrl
 		video.CoverUrl = global.Conf.Ipconfig.Ip_url + "static" + u.CoverUrl
-		video.IsFavorite = resultCount == 0
+		video.IsFavorite = Dbm.GetVideoFavouriteRelation(user.Id, u.Id)
 		if err != nil {
 			fmt.Println("err = ", err)
 			break
@@ -223,22 +235,25 @@ func (mgr *manager) UpdateUserFavorite(userId int64, videoId string, favourite s
 	favourInt, _ := strconv.ParseInt(favourite, 10, 8)
 	var result _type.Favourite
 	//首先查询该用户是否与该视频有关系，如果没有则添加新用户，并将favourite赋值为1
-	err := db.QueryRow("select * from favouriter_video where user_id = ? and video_id = ?", userId, video_Id).Scan(&result.UserId, &result.VideoId, &result.Favourite)
+	_ = db.QueryRow("select * from favouriter_video where user_id = ? and video_id = ?", userId, video_Id).Scan(&result.UserId, &result.VideoId, &result.Favourite)
 
 	//已经建立关系
-	if err == nil {
+	if result.UserId != 0 {
 		if favourInt == 1 {
 			_, err := db.Exec("update favouriter_video set favourite = ? where user_id = ? and video_id = ?", 1, userId, videoId)
 			if err != nil {
-				fmt.Println("1在修改用户点赞操作时出现错误，err = ", err)
+				fmt.Println("在修改用户点赞操作为1时出现错误，err = ", err)
 			}
 			_, err = db.Exec("update video set favourite_count = favourite_count+1 where id=?", video_Id)
 		} else if favourInt == 2 {
-			_, err2 := db.Exec("delete from favouriter_video where user_id=? and video_id=?", userId, videoId)
-			if err2 != nil {
-				fmt.Println("在删除关系的时候出错，err = ", err2)
+			_, err := db.Exec("delete from favouriter_video where user_id=? and video_id=?", userId, videoId)
+			if err != nil {
+				fmt.Println("在删除关系的时候出错，err = ", err)
 			}
 			_, err = db.Exec("update video set favourite_count = favourite_count-1 where id=?", video_Id)
+			if err != nil {
+				fmt.Println("更新视频表点赞减1时出错")
+			}
 		}
 	} else {
 		//添加用户和视频的关系
@@ -247,17 +262,28 @@ func (mgr *manager) UpdateUserFavorite(userId int64, videoId string, favourite s
 			fmt.Println("添加用户与视频的关系出错")
 		}
 		_, err = db.Exec("update video set favourite_count = favourite_count+1 where id=?", video_Id)
+		if err != nil {
+			fmt.Println("更新视频表点赞加1时出错")
+		}
 	}
 }
 
-func (mgr *manager) UserFavoriteUser(userId string, favouriteUserId string, actionType string) bool {
+// UserFavoriteUser 用户关注操作
+func (mgr *manager) UserFavoriteUser(token string, favouriteUserId string, actionType string) bool {
+	//对数据进行预处理
 	favouriteType, _ := strconv.ParseInt(actionType, 10, 8)
-	id := UsersLoginInfo[userId].Id
-	var count int64
-	db.QueryRow("select * from user where Id = ?", id).Scan(&count)
+	id := UsersLoginInfo[token].Id
 
-	if count != 0 {
-		if strconv.FormatInt(id, 10) != favouriteUserId {
+	//进行查询获取用户
+	rows, err := db.Query("select * from user where Id = ?", id)
+	defer rows.Close()
+
+	if err != nil {
+		return false
+	}
+	favouiteId, _ := strconv.ParseInt(favouriteUserId, 10, 8)
+	if rows.Next() {
+		if favouiteId != id {
 			//关注
 			if favouriteType == 1 {
 				_, err := db.Exec("insert into author_fans(author_id,favourite_id) values(?,?)", favouriteUserId, id)
@@ -464,4 +490,23 @@ func (mgr *manager) DeleteCommentById(commentIdInt int64, videoIdInt int64) bool
 		return false
 	}
 	return true
+}
+
+func (mgr *manager) GetFanList(userId string) []_type.User {
+	rows, err := db.Query("SELECT Id, Name, FollowCount, FollowerCount FROM author_fans,user where author_id = ? and favourite_id = user.Id", userId)
+	var count int64
+	db.QueryRow("select count(*) from author_fans,user where author_id = user.Id and author_id = ?", userId).Scan(&count)
+	if err != nil {
+		fmt.Println("查询粉丝出错，err = ", err)
+	}
+	authorList := make([]_type.User, count)
+	var numCount int64
+	for rows.Next() {
+		var user _type.User
+		rows.Scan(&user.Id, &user.Name, &user.FollowCount, &user.FollowerCount)
+		user.IsFollow = true
+		authorList[numCount] = user
+		numCount++
+	}
+	return authorList
 }

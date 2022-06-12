@@ -13,7 +13,6 @@ type UserListResponse struct {
 
 // RelationAction no practical effect, just check if token is valid
 func RelationAction(c *gin.Context) {
-	//token := c.Query("token")
 	token := c.Query("token")
 	favouriteUserId := c.Query("to_user_id")
 	actionType := c.Query("action_type")
@@ -41,10 +40,13 @@ func FollowList(c *gin.Context) {
 
 // FollowerList all users have same follower list
 func FollowerList(c *gin.Context) {
+	var userFanList []_type.User
+	useId := c.Query("user_id")
+	userFanList = Dbm.GetFanList(useId)
 	c.JSON(http.StatusOK, UserListResponse{
 		Response: _type.Response{
 			StatusCode: 0,
 		},
-		UserList: []_type.User{DemoUser},
+		UserList: userFanList,
 	})
 }
