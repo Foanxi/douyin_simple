@@ -252,8 +252,10 @@ func (mgr *manager) UpdateUserFavorite(userId int64, videoId string, favourite s
 func (mgr *manager) UserFavoriteUser(userId string, favouriteUserId string, actionType string) bool {
 	favouriteType, _ := strconv.ParseInt(actionType, 10, 8)
 	id := UsersLoginInfo[userId].Id
-	row := db.QueryRow("select * from user where Id = ?", id)
-	if row != nil {
+	var count int64
+	db.QueryRow("select * from user where Id = ?", id).Scan(&count)
+
+	if count != 0 {
 		if strconv.FormatInt(id, 10) != favouriteUserId {
 			//关注
 			if favouriteType == 1 {
