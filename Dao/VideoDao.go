@@ -103,7 +103,7 @@ func (vdi *videoDaoImp) GetVideoList(token string) []_type.Video {
 	m := make([]_type.Video, count)
 	numCount := 0
 
-	user := Udi.GerAllUser()[token]
+	user, _ := Udi.GetUserByToken(token)
 	//获取视频的信息
 	for videoList.Next() {
 		//数据库使用的临时存放结果集数据的对象

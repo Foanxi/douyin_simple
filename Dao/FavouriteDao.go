@@ -60,10 +60,10 @@ func (Fdi *favoriteDaoImp) UpdateUserFavorite(userId int64, videoId string, favo
 func (Fdi *favoriteDaoImp) UserFavoriteUser(token string, favouriteUserId string, actionType string) bool {
 	//对数据进行预处理
 	favouriteType, _ := strconv.ParseInt(actionType, 10, 8)
-	id := Udi.GerAllUser()[token].Id
+	user, _ := Udi.GetUserByToken(token)
 
 	//进行查询获取用户
-	rows, err := global.Db.Query("select * from user where Id = ?", id)
+	rows, err := global.Db.Query("select * from user where Id = ?", user.Id)
 	defer rows.Close()
 
 	if err != nil {
@@ -71,10 +71,10 @@ func (Fdi *favoriteDaoImp) UserFavoriteUser(token string, favouriteUserId string
 	}
 	favouiteId, _ := strconv.ParseInt(favouriteUserId, 10, 8)
 	if rows.Next() {
-		if favouiteId != id {
+		if favouiteId != user.Id {
 			//关注
 			if favouriteType == 1 {
-				_, err := global.Db.Exec("insert into author_fans(author_id,favourite_id) values(?,?)", favouriteUserId, id)
+				_, err := global.Db.Exec("insert into author_fans(author_id,favourite_id) values(?,?)", favouriteUserId, user.Id)
 				if err != nil {
 					fmt.Println(err)
 					return false
@@ -82,7 +82,7 @@ func (Fdi *favoriteDaoImp) UserFavoriteUser(token string, favouriteUserId string
 				return true
 			} else {
 				// 取消关注
-				_, err := global.Db.Exec("delete from author_fans where author_id = ? and  favourite_id = ? ", favouriteUserId, id)
+				_, err := global.Db.Exec("delete from author_fans where author_id = ? and  favourite_id = ? ", favouriteUserId, user.Id)
 				if err != nil {
 					fmt.Println(err)
 					return false

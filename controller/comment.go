@@ -32,15 +32,16 @@ func CommentAction(c *gin.Context) {
 	if err != nil {
 	}
 	actionType := c.Query("action_type")
-	if user, exist := Dao.Udi.GerAllUser()[token]; exist {
+	user, _ := Dao.Udi.GetUserByToken(token)
+	if user.Id != 0 {
 		//等于1时说明用户要发布评论
 		var comment _type.Comment
 		if actionType == "1" {
 			commentText := c.Query("comment_text")
 			//首先先把评论添加进数据库中
 			comment = Dao.Cdi.AddComment(user.Id, videoIdInt, commentText)
-			c.JSON(http.StatusOK, CommentActionResponse{Response: _type.Response{StatusCode: 0},
-				Comment: comment})
+			c.JSON(http.StatusOK, CommentActionResponse{Response: _type.Response{StatusCode: 0}, Comment: comment})
+			return
 		} else if actionType == "2" {
 			//删除评论
 			//获取该评论的id
@@ -58,7 +59,9 @@ func CommentAction(c *gin.Context) {
 				Response:    _type.Response{StatusCode: 0},
 				CommentList: CommentList,
 			})
+			return
 		}
+		c.JSON(http.StatusOK, _type.Response{StatusCode: 0})
 	} else {
 		c.JSON(http.StatusOK, _type.Response{StatusCode: 1, StatusMsg: "User doesn't exist"})
 	}

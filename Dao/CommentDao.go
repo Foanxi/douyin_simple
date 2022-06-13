@@ -40,12 +40,10 @@ func (Cdi *commentDaoImp) GetAllComment(videoId int64) []_type.Comment {
 	}
 	//将用户信息存储在一个map中
 	userList := make(map[int64]_type.User)
-	//var userNum int64
 	for resultUser.Next() {
 		var user _type.User
 		resultUser.Scan(&user.Id, &user.Name, &user.Password, &user.FollowCount, &user.FollowerCount)
 		userList[user.Id] = user
-		//userNum++
 	}
 	var commentNum int64
 	for resultComment.Next() {

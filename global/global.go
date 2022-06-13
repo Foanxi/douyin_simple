@@ -8,4 +8,5 @@ import (
 var (
 	Conf config.Config
 	Db   *sql.DB
+	Jwt  config.Jwt
 )

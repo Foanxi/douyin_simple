@@ -6,9 +6,9 @@ import (
 )
 
 func FavoriteActionService(token string, videoId string, actionType string) bool {
-	userId := Dao.Udi.GerAllUser()[token].Id
-	Dao.Fdi.UpdateUserFavorite(userId, videoId, actionType)
-	if _, exist := Dao.Udi.GerAllUser()[token]; exist {
+	user, _ := Dao.Udi.GetUserByToken(token)
+	Dao.Fdi.UpdateUserFavorite(user.Id, videoId, actionType)
+	if user.Id != 0 {
 		return true
 	} else {
 		return false
@@ -17,7 +17,7 @@ func FavoriteActionService(token string, videoId string, actionType string) bool
 
 func FavoriteListService(token string) []_type.Video {
 	//调用FavouriteByUserId查出该用户喜爱的视频列表
-	userId, _ := Dao.Udi.GerAllUser()[token]
-	videosList := Dao.Vdi.FavouriteByUserId(userId.Id)
+	user, _ := Dao.Udi.GetUserByToken(token)
+	videosList := Dao.Vdi.FavouriteByUserId(user.Id)
 	return videosList
 }

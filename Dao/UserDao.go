@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/RaymondCode/simple-demo/global"
 	"github.com/RaymondCode/simple-demo/initalize"
+	"github.com/RaymondCode/simple-demo/jwt"
 	_type "github.com/RaymondCode/simple-demo/type"
 )
 
@@ -23,15 +24,16 @@ type UserDaoImp interface {
 	GetUserById(userid int64) _type.User
 	AddUser(user _type.User) bool
 	GetLastId() int64
-	GerAllUser() map[string]_type.User
+	GetAllUser() map[string]_type.User
 	GetUserRelation(authorId int64, favouriteId int64) bool
 	SearchUser(userid int64) _type.User
 	GetAuthorById(userId string) []_type.User
 	GetFanList(userId string) []_type.User
+	GetUserByToken(token string) (_type.User, error)
 }
 
 //	获取全部用户
-func (mgr *userDaoImp) GerAllUser() map[string]_type.User {
+func (mgr *userDaoImp) GetAllUser() map[string]_type.User {
 	if global.Db == nil {
 		InitDB()
 	}
@@ -144,4 +146,18 @@ func (mgr *userDaoImp) GetFanList(userId string) []_type.User {
 		numCount++
 	}
 	return authorList
+}
+
+func (mgr *userDaoImp) GetUserByToken(token string) (_type.User, error) {
+	var user _type.User
+
+	uid, err := jwt.GetUidByToken(token)
+	if err != nil {
+		return user, err
+
+	}
+
+	user = Udi.SearchUser(uid)
+
+	return user, nil
 }

@@ -68,14 +68,13 @@ func ActionService(c *gin.Context, token string, title string) bool {
 	}
 	//c.String(http.StatusOK, fmt.Sprintf("%s,upload", file.Filename))
 	//获取作者编号
-	m := Dao.Udi.GerAllUser()
-	authorId := m[token].Id
+	author, _ := Dao.Udi.GetUserByToken(token)
 	lastTime := c.PostForm("latest_time")
 	if lastTime == "" {
 		lastTime = carbon.Now().ToDateTimeString()
 	}
 	titleSum = titleSum[1:]
 	photoSum = photoSum[1:]
-	_ = Dao.Vdi.InsertVideo(authorId, titleSum, photoSum, lastTime)
+	_ = Dao.Vdi.InsertVideo(author.Id, titleSum, photoSum, lastTime)
 	return true
 }
