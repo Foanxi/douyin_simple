@@ -1,7 +1,7 @@
 package controller
 
 import (
-	"github.com/RaymondCode/simple-demo/Dao"
+	"github.com/RaymondCode/simple-demo/service"
 	"github.com/RaymondCode/simple-demo/type"
 	"github.com/gin-gonic/gin"
 	"net/http"
@@ -14,12 +14,11 @@ type UserListResponse struct {
 
 // RelationAction no practical effect, just check if token is valid
 func RelationAction(c *gin.Context) {
-	//token := c.Query("token")
 	token := c.Query("token")
 	favouriteUserId := c.Query("to_user_id")
 	actionType := c.Query("action_type")
-	statue := Dao.Fdi.UserFavoriteUser(token, favouriteUserId, actionType)
-	if statue {
+	isSuccess := service.RelationActionService(token, favouriteUserId, actionType)
+	if isSuccess {
 		c.JSON(http.StatusOK, _type.Response{StatusCode: 0})
 	} else {
 		c.JSON(http.StatusOK, _type.Response{StatusCode: 1, StatusMsg: "Can't focus on yourself"})
@@ -28,11 +27,9 @@ func RelationAction(c *gin.Context) {
 
 // FollowList all users have same followed list
 func FollowList(c *gin.Context) {
-	var userList []_type.User
 	//获取use_id
 	useId := c.Query("user_id")
-	//进入service层
-	userList = Dao.Udi.GetAuthorById(useId)
+	userList := service.FollowListService(useId)
 	c.JSON(http.StatusOK, UserListResponse{
 		Response: _type.Response{
 			StatusCode: 0,
@@ -43,9 +40,8 @@ func FollowList(c *gin.Context) {
 
 // FollowerList all users have same follower list
 func FollowerList(c *gin.Context) {
-	var userFanList []_type.User
 	useId := c.Query("user_id")
-	userFanList = Dao.Udi.GetFanList(useId)
+	userFanList := service.FollowerListService(useId)
 	c.JSON(http.StatusOK, UserListResponse{
 		Response: _type.Response{
 			StatusCode: 0,

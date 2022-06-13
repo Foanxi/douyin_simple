@@ -21,7 +21,6 @@ type CommentActionResponse struct {
 
 // CommentAction no practical effect, just check if token is valid
 func CommentAction(c *gin.Context) {
-
 	token := c.Query("token")
 	//获取用户的id，用于鉴别是否有权限看评论
 	if token == "" {

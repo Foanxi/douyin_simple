@@ -46,3 +46,8 @@ type Favourite struct {
 	VideoId   int64
 	Favourite int8
 }
+type UserLoginResponse struct {
+	Response
+	UserId int64  `json:"user_id,omitempty"`
+	Token  string `json:"token"`
+}
