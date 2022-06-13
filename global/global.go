@@ -1,12 +1,12 @@
 package global
 
 import (
-	"database/sql"
 	"github.com/RaymondCode/simple-demo/config"
+	"gorm.io/gorm"
 )
 
 var (
 	Conf config.Config
-	Db   *sql.DB
+	Db   *gorm.DB
 	Jwt  config.Jwt
 )

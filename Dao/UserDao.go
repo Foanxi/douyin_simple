@@ -1,14 +1,12 @@
 package Dao
 
 import (
-	"fmt"
 	"github.com/RaymondCode/simple-demo/global"
 	"github.com/RaymondCode/simple-demo/initialize"
 	"github.com/RaymondCode/simple-demo/jwt"
+	"github.com/RaymondCode/simple-demo/model"
 	_type "github.com/RaymondCode/simple-demo/type"
 )
-
-var Db = global.Db
 
 type userDaoImp struct {
 }
@@ -32,7 +30,7 @@ type UserDaoImp interface {
 	GetUserByToken(token string) (_type.User, error)
 }
 
-//	获取全部用户
+// GetAllUser 获取全部用户
 func (mgr *userDaoImp) GetAllUser() map[string]_type.User {
 	if global.Db == nil {
 		InitDB()
@@ -40,110 +38,108 @@ func (mgr *userDaoImp) GetAllUser() map[string]_type.User {
 	//创建一个map存放User对象，并通过token作为键获取对应的User对象
 	m := make(map[string]_type.User)
 
-	rows, _ := global.Db.Query("select id, name, password, followcount, followercount from user")
-	defer rows.Close()
+	var users []model.User
 
-	var u _type.User
-	for rows.Next() {
-		err := rows.Scan(&u.Id, &u.Name, &u.Password, &u.FollowCount, &u.FollowerCount)
-		if err != nil {
-			return nil
+	global.Db.Raw("select * from user").Scan(&users)
+
+	for i := 0; i < len(users); i++ {
+		result := users[i]
+		user := _type.User{
+			Id:            result.Id,
+			Name:          result.Name,
+			Password:      result.Password,
+			FollowCount:   result.FollowCount,
+			FollowerCount: result.FollowerCount,
 		}
-		token := u.Name + u.Password
-		m[token] = u
+		token := user.Name + user.Password
+		m[token] = user
 	}
 	return m
 }
 
-// 添加新用户
+// AddUser 添加新用户
 func (mgr *userDaoImp) AddUser(user _type.User) bool {
-	_, err := global.Db.Exec("INSERT INTO user(Id,Name,Password,FollowCount,FollowerCount)VALUES (?,?,?,?,?)", &user.Id, &user.Name, &user.Password, &user.FollowCount, &user.FollowerCount)
-	if err != nil {
-		fmt.Println("添加新用户时出错")
-		return false
-	}
+	global.Db.Exec("INSERT INTO user VALUES (?,?,?,?,?)", &user.Id, &user.Name, &user.Password, &user.FollowCount, &user.FollowerCount)
 	return true
 }
 
-//获取用户的最后一个id
+// GetLastId 获取用户的最后一个id
 func (mgr *userDaoImp) GetLastId() int64 {
-	var id int64
-	err := global.Db.QueryRow("select id from user order by id desc limit 1").Scan(&id)
-	if err != nil {
-		return 0
-	}
-	return id
+	var user model.User
+	global.Db.Last(&user)
+	return user.Id
 }
 
-//返回指定id的用户
+// GetUserById 返回指定id的用户
 func (mgr *userDaoImp) GetUserById(id int64) _type.User {
-	var user _type.User
-	err := global.Db.QueryRow("select * from user where id = ?", id).Scan(&user.Id, &user.Name, &user.Password, &user.FollowCount, &user.FollowerCount)
 
-	if err != nil {
-		fmt.Println("返回指定id的用户时出错")
+	var userModel model.User
+	global.Db.Raw("select * from user where id = ?", id).Scan(&userModel)
+	user := _type.User{
+		Id:            userModel.Id,
+		Password:      userModel.Password,
+		Name:          userModel.Name,
+		FollowCount:   userModel.FollowCount,
+		FollowerCount: userModel.FollowerCount,
 	}
 	return user
 }
 
-// GetUserRelation id 表示关注作者的id，token表示当前用户的令牌
+// GetUserRelation authorId 表示关注作者的id，favouriteId 表示当前用户的id
 func (mgr *userDaoImp) GetUserRelation(authorId int64, favouriteId int64) bool {
-	rows, err := global.Db.Query("select * from author_fans where author_id = ? and favourite_id = ?", authorId, favouriteId)
-	if err != nil {
-		return false
-	}
-	return rows.Next()
+	var favouriteUser model.FavouriteUser
+	global.Db.Raw("select * from favourite_user where author_id = ? and favourite_id = ?", authorId, favouriteId).Scan(&favouriteUser)
+	return favouriteUser.AuthorId == authorId
 }
 
-//
+// SearchUser 查询一个用户
 func (mgr *userDaoImp) SearchUser(userid int64) _type.User {
-	row := global.Db.QueryRow("select id, name, followcount, followercount from user where id=?", &userid)
-	if row == nil {
-		fmt.Print("查询失败")
-		return _type.User{}
-	}
-	var u _type.User
-	err := row.Scan(&u.Id, &u.Name, &u.FollowCount, &u.FollowerCount)
-	if err != nil {
-		fmt.Print("添加至结构体失败")
+	var user model.User
+	global.Db.Raw("select * from user where id=?", userid).Scan(&user)
+	u := _type.User{
+		Id:            user.Id,
+		Password:      user.Password,
+		Name:          user.Name,
+		FollowCount:   user.FollowCount,
+		FollowerCount: user.FollowerCount,
 	}
 	return u
 }
 
 // GetAuthorById 获取全部关注人
 func (mgr *userDaoImp) GetAuthorById(userId string) []_type.User {
-	rows, err := global.Db.Query("SELECT author_id, Name, FollowCount, FollowerCount FROM author_fans,user where favourite_id = ? and author_id = user.Id", userId)
-	if err != nil {
-		fmt.Println("查询关注时出错，err = ", err)
+	var users []model.User
+	global.Db.Raw("SELECT * FROM favourite_user,user where favourite_id = ? and author_id = user.Id", userId).Scan(&users)
+	authorList := make([]_type.User, len(users))
+	for i := 0; i < len(users); i++ {
+		result := users[i]
+		user := _type.User{
+			Id:            result.Id,
+			Password:      result.Password,
+			Name:          result.Name,
+			FollowCount:   result.FollowCount,
+			FollowerCount: result.FollowerCount,
+			IsFollow:      true,
+		}
+		authorList[i] = user
 	}
-	authorList := make([]_type.User, 20)
-	var numCount int64
-	for rows.Next() {
-		var user _type.User
-		rows.Scan(&user.Id, &user.Name, &user.FollowCount, &user.FollowerCount)
-		user.IsFollow = true
-		authorList[numCount] = user
-		numCount++
-	}
-	authorList = authorList[:numCount]
 	return authorList
 }
 
 func (mgr *userDaoImp) GetFanList(userId string) []_type.User {
-	rows, err := global.Db.Query("SELECT Id, Name, FollowCount, FollowerCount FROM author_fans,user where author_id = ? and favourite_id = user.Id", userId)
-	var count int64
-	global.Db.QueryRow("select count(*) from author_fans,user where author_id = user.Id and author_id = ?", userId).Scan(&count)
-	if err != nil {
-		fmt.Println("查询粉丝出错，err = ", err)
-	}
-	authorList := make([]_type.User, count)
-	var numCount int64
-	for rows.Next() {
-		var user _type.User
-		rows.Scan(&user.Id, &user.Name, &user.FollowCount, &user.FollowerCount)
-		user.IsFollow = true
-		authorList[numCount] = user
-		numCount++
+	var users []model.User
+	global.Db.Raw("SELECT * FROM favourite_user,user where author_id = ? and favourite_id = user.Id", userId).Scan(&users)
+	authorList := make([]_type.User, len(users))
+	for i := 0; i < len(users); i++ {
+		result := users[i]
+		user := _type.User{
+			Id:            result.Id,
+			Name:          result.Name,
+			FollowCount:   result.FollowCount,
+			FollowerCount: result.FollowerCount,
+			IsFollow:      true,
+		}
+		authorList[i] = user
 	}
 	return authorList
 }

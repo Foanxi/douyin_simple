@@ -51,8 +51,8 @@ func CommentAction(c *gin.Context) {
 				fmt.Println("在转换评论id时出错，err = ", err)
 			}
 			//进行删除操作
-			isDelete := Dao.Cdi.DeleteCommentById(commentIdInt, videoIdInt)
-			fmt.Println("是否成功删除该评论：", isDelete)
+			Dao.Cdi.DeleteCommentById(commentIdInt, videoIdInt)
+			//fmt.Println("是否成功删除该评论：", isDelete)
 			//返回全部列表
 			CommentList := Dao.Cdi.GetAllComment(videoIdInt)
 			c.JSON(http.StatusOK, CommentListResponse{
