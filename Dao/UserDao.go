@@ -3,7 +3,7 @@ package Dao
 import (
 	"fmt"
 	"github.com/RaymondCode/simple-demo/global"
-	"github.com/RaymondCode/simple-demo/initalize"
+	"github.com/RaymondCode/simple-demo/initialize"
 	"github.com/RaymondCode/simple-demo/jwt"
 	_type "github.com/RaymondCode/simple-demo/type"
 )
@@ -14,8 +14,8 @@ type userDaoImp struct {
 }
 
 func InitDB() {
-	initalize.LoadConfig()
-	initalize.Mysql()
+	initialize.LoadConfig()
+	initialize.Mysql()
 }
 
 var Udi UserDaoImp = &userDaoImp{}

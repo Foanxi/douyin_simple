@@ -2,13 +2,13 @@ package main
 
 import (
 	"fmt"
-	"github.com/RaymondCode/simple-demo/initalize"
+	"github.com/RaymondCode/simple-demo/initialize"
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
-	initalize.LoadConfig()
-	initalize.Mysql()
+	initialize.LoadConfig()
+	initialize.Mysql()
 	r := gin.Default()
 	initRouter(r)
 

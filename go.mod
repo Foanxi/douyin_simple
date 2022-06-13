@@ -8,6 +8,8 @@ require (
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/golang-module/carbon/v2 v2.1.8
 	github.com/spf13/viper v1.12.0
+	gorm.io/driver/mysql v1.3.4
+	gorm.io/gorm v1.23.6
 )
 
 require (
@@ -18,6 +20,8 @@ require (
 	github.com/go-playground/validator/v10 v10.11.0 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
+	github.com/jinzhu/inflection v1.0.0 // indirect
+	github.com/jinzhu/now v1.1.4 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/leodido/go-urn v1.2.1 // indirect
 	github.com/magiconair/properties v1.8.6 // indirect
