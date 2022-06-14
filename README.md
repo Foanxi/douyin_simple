@@ -36,8 +36,11 @@
 - Initialize 包：负责配置初始化和数据库初始化
 - Type 包：负责存放结构体，统一后续调用，类似于 Java 中的实体类
 - douyin.sql ：数据库脚本文件，用于建立数据库
+- Jwt 包：负责生成 token 和解析 token 成用户 id
+- Model 包：负责统一管理 gorm 所需要的结构体
 
 ```shell
+D:.
 │  .gitattributes
 │  .gitignore
 │  go.mod
@@ -74,6 +77,11 @@
 ├─initialize
 │      initConfig.go
 │      initMysql.go
+├─jwt
+│      jwt.go
+│
+├─model
+│      model.go
 │
 └─type
         common.go
